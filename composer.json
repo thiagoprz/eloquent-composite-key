@@ -1,0 +1,24 @@
+{
+    "name": "thiagoprz/eloquent-composite-key",
+    "description": "Eloquent Composite Key Support Package",
+    "type": "library",
+    "autoload": {
+        "classmap": [
+            "src/"
+        ],
+        "psr-4": {
+            "Thiagoprz\\CompositeKey\\": "src"
+        }
+    },
+    "require": {
+        "php": "^7.1.3"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Thiago Przyczynski",
+            "email": "przyczynski@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev"
+}
