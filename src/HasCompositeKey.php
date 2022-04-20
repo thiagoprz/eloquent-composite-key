@@ -69,14 +69,10 @@ trait HasCompositeKey
      * @param array $ids
      * @return mixed
      */
-    public function find(array $ids)
+    public static function find(array $ids)
     {
-        if (!isset($this)) {
-            $modelClass = self::class;
-            $model = new $modelClass();
-        } else {
-            $model = $this;
-        }
+        $modelClass = self::class;
+        $model = new $modelClass();
         $keys = $model->primaryKey;
         return $model->where(function($query) use($ids, $keys) {
             foreach ($keys as $idx => $key) {
