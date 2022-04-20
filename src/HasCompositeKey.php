@@ -57,7 +57,7 @@ trait HasCompositeKey
     {
         $fields = $this->getKeyName();
         $keys = [];
-        array_map(function($key) use($fields, &$keys) {
+        array_map(function($key) use(&$keys) {
             $keys[] = $this->getAttribute($key);
         }, $fields);
         return $keys;
