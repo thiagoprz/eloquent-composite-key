@@ -91,7 +91,7 @@ trait HasCompositeKey
      * @param array $ids
      * @return mixed
      */
-    public function findOrFail(array $ids)
+    public static function findOrFail(array $ids)
     {
         if (!isset($this)) {
             $modelClass = self::class;
