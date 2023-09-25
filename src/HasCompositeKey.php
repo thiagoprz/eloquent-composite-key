@@ -71,7 +71,7 @@ trait HasCompositeKey
      */
     public static function find(array $ids)
     {
-        $modelClass = self::class;
+        $modelClass = get_called_class();
         $model = new $modelClass();
         $keys = $model->primaryKey;
         return $model->where(function($query) use($ids, $keys) {
@@ -93,12 +93,8 @@ trait HasCompositeKey
      */
     public static function findOrFail(array $ids)
     {
-        if (!isset($this)) {
-            $modelClass = self::class;
-            $model = new $modelClass();
-        } else {
-            $model = $this;
-        }
+        $modelClass = get_called_class();
+        $model = new $modelClass();
         $record = $model->find($ids);
         if (!$record) {
             throw new ModelNotFoundException;
