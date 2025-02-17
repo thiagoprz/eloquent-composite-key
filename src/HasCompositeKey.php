@@ -62,29 +62,33 @@ trait HasCompositeKey
         }, $fields);
         return $keys;
     }
-
+    
+    public function getQueueableId()
+    {
+        return json_encode(array_combine($this->getKeyName(), $this->getKey()));
+    }
     /**
      * Finds model by primary keys
      *
      * @param array $ids
      * @return mixed
      */
-    public static function find(array $ids)
+
+    public static function find(string|array $ids)
     {
+        if (is_string($ids)) {
+            $ids = json_decode($ids, true);
+        }
+
         $modelClass = get_called_class();
         $model = new $modelClass();
         $keys = $model->primaryKey;
-        return $model->where(function($query) use($ids, $keys) {
-            foreach ($keys as $idx => $key) {
-                if (isset($ids[$idx])) {
-                    $query->where($key, $ids[$idx]);
-                } else {
-                    $query->whereNull($key);
-                }
+        return $model->where(function ($query) use ($ids, $keys) {
+            foreach ($keys as $key) {
+                $query->where($key, '=', $ids[$key]);
             }
         })->first();
     }
-
     /**
      * Find model by primary key or throws ModelNotFoundException
      *
