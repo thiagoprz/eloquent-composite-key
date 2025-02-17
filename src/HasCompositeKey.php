@@ -11,27 +11,11 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 trait HasCompositeKey
 {
 
-    /**
-     * Set the keys for a save update query.
-     *
-     * @param  \Illuminate\Database\Eloquent\Builder  $query
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    protected function setKeysForSaveQuery($query)
+    public function getIncrementing()
     {
-        $keys = $this->getKeyName();
-        return !is_array($keys) ? parent::setKeysForSaveQuery($query) : $query->where(function($q) use($keys) {
-            foreach($keys as $key){
-                $q->where($key, '=', $this->getAttribute($key));
-            }
-        });
+        return false;
     }
 
-    /**
-     * Get the casts array.
-     *
-     * @return array
-     */
     public function getCasts()
     {
         if ($this->getIncrementing()) {
@@ -40,55 +24,66 @@ trait HasCompositeKey
         return $this->casts;
     }
 
-    /**
-     * @return false
-     */
-    public function getIncrementing()
+    public function getKeyName()
     {
-        return false;
+        return $this->primaryKey;
     }
 
-    /**
-     * Get the value of the model's primary key.
-     *
-     * @return mixed
-     */
     public function getKey()
     {
         $fields = $this->getKeyName();
         $keys = [];
-        array_map(function($key) use(&$keys) {
+        array_map(function ($key) use (&$keys) {
             $keys[] = $this->getAttribute($key);
         }, $fields);
         return $keys;
     }
-    
+
+    protected function getKeysForSaveQuery($query)
+    {
+        foreach ($this->primaryKey as $key) {
+            $query->where($key, '=', $this->getAttribute($key));
+        }
+        return $query;
+    }
+
+    protected function setKeysForSaveQuery($query)
+    {
+        $keys = $this->getKeyName();
+        return !is_array($keys) ? parent::setKeysForSaveQuery($query) : $query->where(function ($q) use ($keys) {
+            foreach ($keys as $key) {
+                $q->where($key, '=', $this->getAttribute($key));
+            }
+        });
+    }
+
     public function getQueueableId()
     {
-        return json_encode(array_combine($this->getKeyName(), $this->getKey()));
+        return implode(':', array_map(fn($key) => $this->getAttribute($key), $this->getKeyName()));
     }
-    /**
-     * Finds model by primary keys
-     *
-     * @param array $ids
-     * @return mixed
-     */
+
 
     public static function find(string|array $ids)
     {
         if (is_string($ids)) {
-            $ids = json_decode($ids, true);
+            $ids = explode(':', $ids);
         }
 
-        $modelClass = get_called_class();
-        $model = new $modelClass();
-        $keys = $model->primaryKey;
-        return $model->where(function ($query) use ($ids, $keys) {
-            foreach ($keys as $key) {
-                $query->where($key, '=', $ids[$key]);
+        $model = new static();
+        $keyNames = $model->getKeyName();
+
+        if (!is_array($ids) || count($ids) !== count($keyNames)) {
+            return null;
+        }
+
+        return static::where(function ($query) use ($keyNames, $ids) {
+            foreach ($keyNames as $index => $key) {
+                $query->where($key, '=', $ids[$index]);
             }
         })->first();
     }
+
+
     /**
      * Find model by primary key or throws ModelNotFoundException
      *
@@ -104,5 +99,29 @@ trait HasCompositeKey
             throw new ModelNotFoundException;
         }
         return $record;
+    }
+
+    public function newQueryForRestoration($ids)
+    {
+        if (is_string($ids) && str_contains($ids, ':')) {
+            $ids = explode(':', $ids);
+        }
+
+        if (is_array($ids)) {
+            $keyNames = $this->getKeyName();
+
+            if (count($ids) !== count($keyNames)) {
+                return parent::newQueryForRestoration($ids);
+            }
+
+            $query = $this->newQueryWithoutScopes();
+            foreach ($keyNames as $index => $key) {
+                $query->where($key, '=', $ids[$index]);
+            }
+
+            return $query;
+        }
+
+        return parent::newQueryForRestoration($ids);
     }
 }
